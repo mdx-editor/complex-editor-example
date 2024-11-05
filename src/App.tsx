@@ -1,11 +1,17 @@
 import {
+  $createFrontmatterNode,
+  $isFrontmatterNode,
   diffSourcePlugin,
   DiffSourceToggleWrapper,
+  frontmatterPlugin,
   headingsPlugin,
+  jsxPlugin,
   MDXEditor,
   realmPlugin,
+  rootEditor$,
   toolbarPlugin,
   UndoRedo,
+  useMdastNodeUpdater,
   viewMode$,
 } from "@mdxeditor/editor";
 
@@ -18,6 +24,7 @@ import { htmlElementsPlugin } from "./htmlElementsPlugin";
 import { Compartment } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { HTMLToolbarComponent } from "./HTMLToolbarComponent";
+import { $getRoot } from "lexical";
 
 const markdown = `
   # Hello world
@@ -25,6 +32,7 @@ const markdown = `
   <div class="blue">HTML element</div>
 
   A paragraph
+  <UnknownElement foo="bar" />
 `;
 
 const externalViewModePlugin = realmPlugin<{ sourceMode: boolean }>({
@@ -40,6 +48,17 @@ function App() {
   const [sourceMode, setSourceMode] = useState(false);
   const inDarkModeRef = useRef(false);
   const codeMirrorViewRef = useRef<EditorView | null>(null);
+  const [frontMatterController] = useState(() => {
+    let subscription: (frontMatter: string) => void = () => {};
+    return {
+      subscribe: (fn: (frontMatter: string) => void) => {
+        subscription = fn;
+      },
+      setFrontMatter: (frontMatter: string) => {
+        subscription(frontMatter);
+      },
+    };
+  });
 
   const [editorTheme] = useState(() => {
     return new Compartment();
@@ -70,6 +89,17 @@ function App() {
         />{" "}
         Source mode
       </label>
+      <hr />
+      <label>External Frontmatter:</label>
+      <br />
+      <button
+        onClick={() => frontMatterController.setFrontMatter('"key": "value"')}
+      >
+        Set frontmatter
+      </button>
+      <button onClick={() => frontMatterController.setFrontMatter("")}>
+        Clear frontmatter
+      </button>
 
       <MDXEditor
         contentEditableClassName="my-editor"
@@ -77,6 +107,7 @@ function App() {
         plugins={[
           headingsPlugin(),
           htmlElementsPlugin(),
+          frontmatterPlugin(),
 
           // this enables dark mode when switching to source mode
           realmPlugin({
@@ -106,6 +137,73 @@ function App() {
           }),
 
           externalViewModePlugin({ sourceMode }),
+
+          jsxPlugin({
+            jsxComponentDescriptors: [
+              {
+                name: "*",
+                kind: "flow",
+                hasChildren: false,
+                props: [],
+                Editor: ({ mdastNode }) => {
+                  // you can read the attributes of the JSX node here.
+                  // A more convoluted example is present here: https://github.com/mdx-editor/editor/blob/c6d1067dbe4faeb18246a27988d9b4c334565551/src/jsx-editors/GenericJsxEditor.tsx?plain=1#L40
+                  void mdastNode;
+                  const updateMdastNode = useMdastNodeUpdater();
+                  // here, you can render a custom component for the JSX node.
+                  return (
+                    <div>
+                      Unknown element
+                      <button
+                        onClick={() => {
+                          updateMdastNode({
+                            attributes: [
+                              {
+                                type: "mdxJsxAttribute",
+                                name: "foo",
+                                value: "moo",
+                              },
+                            ],
+                          });
+                        }}
+                      >
+                        Change the foo attribute to "moo"
+                      </button>
+                    </div>
+                  );
+                },
+              },
+            ],
+          }),
+
+          // frontmatter sync
+          realmPlugin({
+            init: (r) => {
+              frontMatterController.subscribe((content) => {
+                const editor = r.getValue(rootEditor$);
+
+                editor?.update(() => {
+                  const firstItem = $getRoot().getFirstChild();
+                  if (content !== "") {
+                    if (!$isFrontmatterNode(firstItem)) {
+                      const fmNode = $createFrontmatterNode(content);
+                      if (firstItem) {
+                        firstItem.insertBefore(fmNode);
+                      } else {
+                        $getRoot().append(fmNode);
+                      }
+                    } else {
+                      firstItem.setYaml(content);
+                    }
+                  } else {
+                    if ($isFrontmatterNode(firstItem)) {
+                      firstItem.remove();
+                    }
+                  }
+                });
+              });
+            },
+          })(),
 
           toolbarPlugin({
             toolbarContents: () => (
