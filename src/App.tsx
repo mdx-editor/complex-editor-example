@@ -8,6 +8,7 @@ import {
 } from "@mdxeditor/editor";
 
 import "@mdxeditor/editor/style.css";
+import "./my-editor.css";
 import { basicDark } from "cm6-theme-basic-dark";
 import { basicLight } from "cm6-theme-basic-light";
 import { useRef, useState } from "react";
@@ -46,6 +47,7 @@ function App() {
         Dark mode for source view.
       </label>
       <MDXEditor
+        contentEditableClassName="my-editor"
         markdown={markdown}
         plugins={[
           headingsPlugin(),
