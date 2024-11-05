@@ -1,8 +1,19 @@
-import { MDXEditor } from "@mdxeditor/editor";
-import { headingsPlugin } from "@mdxeditor/editor";
+import {
+  diffSourcePlugin,
+  DiffSourceToggleWrapper,
+  headingsPlugin,
+  MDXEditor,
+  toolbarPlugin,
+  UndoRedo,
+} from "@mdxeditor/editor";
 
 import "@mdxeditor/editor/style.css";
+import { basicDark } from "cm6-theme-basic-dark";
+import { basicLight } from "cm6-theme-basic-light";
+import { useRef, useState } from "react";
 import { htmlElementsPlugin } from "./htmlElementsPlugin";
+import { Compartment } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
 
 const markdown = `
   # Hello world
@@ -11,12 +22,53 @@ const markdown = `
 
   A paragraph
 `;
+
 function App() {
+  const codeMirrorViewRef = useRef<EditorView | null>(null);
+
+  const [editorTheme] = useState(() => {
+    return new Compartment();
+  });
+
   return (
-    <MDXEditor
-      markdown={markdown}
-      plugins={[headingsPlugin(), htmlElementsPlugin()]}
-    />
+    <div>
+      <label>
+        <input
+          type="checkbox"
+          onChange={(e) =>
+            codeMirrorViewRef.current?.dispatch({
+              effects: editorTheme.reconfigure(
+                e.target.checked ? basicDark : basicLight,
+              ),
+            })
+          }
+        />{" "}
+        Dark mode for source view.
+      </label>
+      <MDXEditor
+        markdown={markdown}
+        plugins={[
+          headingsPlugin(),
+          htmlElementsPlugin(),
+          diffSourcePlugin({
+            codeMirrorExtensions: [
+              // this will work for code blocks in the rich mode, too
+              editorTheme.of(basicLight),
+              EditorView.updateListener.of((update) => {
+                codeMirrorViewRef.current = update.view;
+              }),
+            ],
+          }),
+          toolbarPlugin({
+            toolbarContents: () => (
+              <DiffSourceToggleWrapper>
+                <UndoRedo />
+              </DiffSourceToggleWrapper>
+            ),
+          }),
+        ]}
+      />
+    </div>
   );
 }
 

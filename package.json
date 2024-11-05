@@ -10,7 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@codemirror/state": "^6.4.1",
+    "@codemirror/view": "^6.34.1",
     "@mdxeditor/editor": "^3.15.0",
+    "cm6-theme-basic-dark": "^0.2.0",
+    "cm6-theme-basic-light": "^0.2.0",
     "lexical": "^0.17.1",
     "mdast-util-mdx": "^3.0.0",
     "react": "^18.3.1",
