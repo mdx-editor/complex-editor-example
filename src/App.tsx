@@ -15,11 +15,12 @@ import { useRef, useState } from "react";
 import { htmlElementsPlugin } from "./htmlElementsPlugin";
 import { Compartment } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
+import { HTMLToolbarComponent } from "./HTMLToolbarComponent";
 
 const markdown = `
   # Hello world
 
-  <div>HTML element</div>
+  <div class="blue">HTML element</div>
 
   A paragraph
 `;
@@ -64,6 +65,7 @@ function App() {
           toolbarPlugin({
             toolbarContents: () => (
               <DiffSourceToggleWrapper>
+                <HTMLToolbarComponent />
                 <UndoRedo />
               </DiffSourceToggleWrapper>
             ),
