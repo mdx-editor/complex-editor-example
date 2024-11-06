@@ -5,6 +5,7 @@ import {
   DiffSourceToggleWrapper,
   frontmatterPlugin,
   headingsPlugin,
+  imagePlugin,
   jsxPlugin,
   MDXEditor,
   realmPlugin,
@@ -33,6 +34,8 @@ const markdown = `
 
   A paragraph
   <UnknownElement foo="bar" />
+
+  ![Image](https://example.com/image.png)
 `;
 
 const externalViewModePlugin = realmPlugin<{ sourceMode: boolean }>({
@@ -212,6 +215,13 @@ function App() {
                 <UndoRedo />
               </DiffSourceToggleWrapper>
             ),
+          }),
+
+          imagePlugin({
+            imagePreviewHandler: async (src) => {
+              console.log("Image preview handler", src);
+              return Promise.resolve("https://picsum.photos/200/300");
+            },
           }),
         ]}
       />
