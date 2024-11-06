@@ -18,6 +18,7 @@ import {
 
 import "@mdxeditor/editor/style.css";
 import "./my-editor.css";
+import "./lexical-playground-theme.css";
 import { basicDark } from "cm6-theme-basic-dark";
 import { basicLight } from "cm6-theme-basic-light";
 import { useRef, useState } from "react";
@@ -26,6 +27,9 @@ import { Compartment } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { HTMLToolbarComponent } from "./HTMLToolbarComponent";
 import { $getRoot } from "lexical";
+import { codeBlockPlugin } from "./CodePlugin/codeBlockPlugin";
+import { customLexicalTheme } from "./LexicalTheme";
+import { markdownShortcutPlugin } from "./ShortcutsPlugin/shortcutsPlugin";
 
 const markdown = `
   # Hello world
@@ -36,6 +40,10 @@ const markdown = `
   <UnknownElement foo="bar" />
 
   ![Image](https://example.com/image.png)
+
+\`\`\`js
+console.log("Hello world");
+\`\`\`
 `;
 
 const externalViewModePlugin = realmPlugin<{ sourceMode: boolean }>({
@@ -76,7 +84,7 @@ function App() {
             inDarkModeRef.current = e.target.checked;
             codeMirrorViewRef.current?.dispatch({
               effects: editorTheme.reconfigure(
-                inDarkModeRef.current ? basicDark : basicLight,
+                inDarkModeRef.current ? basicDark : basicLight
               ),
             });
           }}
@@ -106,6 +114,7 @@ function App() {
 
       <MDXEditor
         contentEditableClassName="my-editor"
+        lexicalTheme={customLexicalTheme}
         markdown={markdown}
         plugins={[
           headingsPlugin(),
@@ -121,7 +130,7 @@ function App() {
                   setTimeout(() => {
                     codeMirrorViewRef.current?.dispatch({
                       effects: editorTheme.reconfigure(
-                        inDarkModeRef.current ? basicDark : basicLight,
+                        inDarkModeRef.current ? basicDark : basicLight
                       ),
                     });
                   });
@@ -223,6 +232,9 @@ function App() {
               return Promise.resolve("https://picsum.photos/200/300");
             },
           }),
+
+          codeBlockPlugin(),
+          markdownShortcutPlugin(),
         ]}
       />
     </div>
