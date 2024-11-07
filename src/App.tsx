@@ -6,12 +6,14 @@ import {
   frontmatterPlugin,
   headingsPlugin,
   imagePlugin,
+  imagePreviewHandler$,
   jsxPlugin,
   MDXEditor,
   realmPlugin,
   rootEditor$,
   toolbarPlugin,
   UndoRedo,
+  useCellValue,
   useMdastNodeUpdater,
   viewMode$,
 } from "@mdxeditor/editor";
@@ -21,7 +23,7 @@ import "./my-editor.css";
 import "./lexical-playground-theme.css";
 import { basicDark } from "cm6-theme-basic-dark";
 import { basicLight } from "cm6-theme-basic-light";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { htmlElementsPlugin } from "./htmlElementsPlugin";
 import { Compartment } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
@@ -40,6 +42,8 @@ const markdown = `
   <UnknownElement foo="bar" />
 
   ![Image](https://example.com/image.png)
+
+  <CustomImage />
 
 \`\`\`js
 console.log("Hello world");
@@ -152,6 +156,35 @@ function App() {
 
           jsxPlugin({
             jsxComponentDescriptors: [
+              {
+                name: "CustomImage",
+                kind: "flow",
+                hasChildren: false,
+                props: [],
+                Editor: () => {
+                  // this is how you get the value of the image preview handler
+                  const imagePreviewHandler =
+                    useCellValue(imagePreviewHandler$)!;
+
+                  const [imageSource, setImageSource] =
+                    useState<string>("unknown");
+
+                  useEffect(() => {
+                    if (imagePreviewHandler) {
+                      const callPreviewHandler = async () => {
+                        setImageSource(await imagePreviewHandler("something"));
+                      };
+                      callPreviewHandler().catch((e: unknown) => {
+                        console.error(e);
+                      });
+                    } else {
+                      setImageSource("unknown");
+                    }
+                  }, [imagePreviewHandler]);
+
+                  return <img src={imageSource} alt="Custom image" />;
+                },
+              },
               {
                 name: "*",
                 kind: "flow",
