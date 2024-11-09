@@ -5,6 +5,7 @@ import {
   addLexicalNode$,
   createRootEditorSubscription$,
   realmPlugin,
+  addNestedEditorChild$,
 } from "@mdxeditor/editor";
 import { MdastCodeVisitor } from "./MdastCodeVisitor";
 import {
@@ -14,6 +15,7 @@ import {
 } from "@lexical/code";
 import { CodeVisitor } from "./LexicalCodeVisitor";
 import CodeActionMenuPlugin from "../CodeActionMenuPlugin";
+import CodeHighlightPlugin from "../CodeHighlightPlugin";
 
 /**
  * A plugin that adds support for code blocks and custom code block editors.
@@ -31,5 +33,7 @@ export const codeBlockPlugin = realmPlugin({
     realm.pub(createRootEditorSubscription$, (theEditor) => {
       return registerCodeHighlighting(theEditor);
     });
+
+    realm.pub(addNestedEditorChild$, [CodeHighlightPlugin]);
   },
 });

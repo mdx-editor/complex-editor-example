@@ -14,7 +14,7 @@
     "@codemirror/view": "^6.34.1",
     "@lexical/code": "^0.17.1",
     "@lexical/utils": "^0.17.1",
-    "@mdxeditor/editor": "^3.17.0",
+    "@mdxeditor/editor": "^3.17.1",
     "cm6-theme-basic-dark": "^0.2.0",
     "cm6-theme-basic-light": "^0.2.0",
     "lexical": "^0.17.1",

@@ -9,6 +9,7 @@ import {
   imagePreviewHandler$,
   jsxPlugin,
   MDXEditor,
+  NestedLexicalEditor,
   realmPlugin,
   rootEditor$,
   toolbarPlugin,
@@ -32,6 +33,7 @@ import { $getRoot } from "lexical";
 import { codeBlockPlugin } from "./CodePlugin/codeBlockPlugin";
 import { customLexicalTheme } from "./LexicalTheme";
 import { markdownShortcutPlugin } from "./ShortcutsPlugin/shortcutsPlugin";
+import { MdxJsxTextElement } from "mdast-util-mdx";
 
 const markdown = `
   # Hello world
@@ -45,9 +47,15 @@ const markdown = `
 
   <CustomImage />
 
+<CodeGroup>
 \`\`\`js
 console.log("Hello world");
 \`\`\`
+
+\`\`\`js
+console.log("Hello world");
+\`\`\`
+</CodeGroup>
 `;
 
 const externalViewModePlugin = realmPlugin<{ sourceMode: boolean }>({
@@ -183,6 +191,32 @@ function App() {
                   }, [imagePreviewHandler]);
 
                   return <img src={imageSource} alt="Custom image" />;
+                },
+              },
+              {
+                name: "CodeGroup",
+                kind: "flow",
+                hasChildren: true,
+                props: [],
+                Editor: () => {
+                  return (
+                    <div
+                      style={{
+                        border: "1px solid red",
+                        padding: 8,
+                        margin: 8,
+                        display: "inline-block",
+                      }}
+                    >
+                      <NestedLexicalEditor<MdxJsxTextElement>
+                        getContent={(node) => node.children}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        getUpdatedMdastNode={(mdastNode, children: any) => {
+                          return { ...mdastNode, children };
+                        }}
+                      />
+                    </div>
+                  );
                 },
               },
               {
