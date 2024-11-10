@@ -34,20 +34,24 @@ import { codeBlockPlugin } from "./CodePlugin/codeBlockPlugin";
 import { customLexicalTheme } from "./LexicalTheme";
 import { markdownShortcutPlugin } from "./ShortcutsPlugin/shortcutsPlugin";
 import { MdxJsxTextElement } from "mdast-util-mdx";
-import { SourceEditor } from "./SourceEditor";
 import { SourceEditorExample } from "./SourceEditorExample";
+import { esmEditorPlugin } from "./esmEditorPlugin";
 
 const markdown = `
-  # Hello world
+export const a = 123;
 
-  <div class="blue">HTML element</div>
+# Hello world
 
-  A paragraph
-  <UnknownElement foo="bar" />
+<div class="blue">HTML element</div>
 
-  ![Image](https://example.com/image.png)
+A paragraph
+<UnknownElement foo="bar" />
 
-  <CustomImage />
+![Image](https://example.com/image.png)
+
+<CustomImage />
+
+{a}
 
 <CodeGroup>
 \`\`\`js
@@ -300,14 +304,14 @@ function App() {
             }),
 
             imagePlugin({
-              imagePreviewHandler: async (src) => {
-                console.log("Image preview handler", src);
+              imagePreviewHandler: async (_src) => {
                 return Promise.resolve("https://picsum.photos/200/300");
               },
             }),
 
             codeBlockPlugin(),
             markdownShortcutPlugin(),
+            esmEditorPlugin(),
           ]}
         />
       </div>
