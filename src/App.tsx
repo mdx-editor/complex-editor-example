@@ -34,6 +34,8 @@ import { codeBlockPlugin } from "./CodePlugin/codeBlockPlugin";
 import { customLexicalTheme } from "./LexicalTheme";
 import { markdownShortcutPlugin } from "./ShortcutsPlugin/shortcutsPlugin";
 import { MdxJsxTextElement } from "mdast-util-mdx";
+import { SourceEditor } from "./SourceEditor";
+import { SourceEditorExample } from "./SourceEditorExample";
 
 const markdown = `
   # Hello world
@@ -88,223 +90,229 @@ function App() {
   });
 
   return (
-    <div>
-      <label>
-        <input
-          type="checkbox"
-          onChange={(e) => {
-            inDarkModeRef.current = e.target.checked;
-            codeMirrorViewRef.current?.dispatch({
-              effects: editorTheme.reconfigure(
-                inDarkModeRef.current ? basicDark : basicLight
-              ),
-            });
-          }}
-        />{" "}
-        Dark mode for source view.
-      </label>
-
-      <label>
-        <input
-          type="checkbox"
-          checked={sourceMode}
-          onChange={() => setSourceMode((prev) => !prev)}
-        />{" "}
-        Source mode
-      </label>
-      <hr />
-      <label>External Frontmatter:</label>
-      <br />
-      <button
-        onClick={() => frontMatterController.setFrontMatter('"key": "value"')}
-      >
-        Set frontmatter
-      </button>
-      <button onClick={() => frontMatterController.setFrontMatter("")}>
-        Clear frontmatter
-      </button>
-
-      <MDXEditor
-        contentEditableClassName="my-editor"
-        lexicalTheme={customLexicalTheme}
-        markdown={markdown}
-        plugins={[
-          headingsPlugin(),
-          htmlElementsPlugin(),
-          frontmatterPlugin(),
-
-          // this enables dark mode when switching to source mode
-          realmPlugin({
-            init: (r) => {
-              r.sub(viewMode$, (mode) => {
-                if (mode === "source") {
-                  // delay so that the ref is present.
-                  setTimeout(() => {
-                    codeMirrorViewRef.current?.dispatch({
-                      effects: editorTheme.reconfigure(
-                        inDarkModeRef.current ? basicDark : basicLight
-                      ),
-                    });
-                  });
-                }
+    <>
+      <h1>Editor</h1>
+      <div style={{ height: 400, overflow: "auto" }}>
+        <label>
+          <input
+            type="checkbox"
+            onChange={(e) => {
+              inDarkModeRef.current = e.target.checked;
+              codeMirrorViewRef.current?.dispatch({
+                effects: editorTheme.reconfigure(
+                  inDarkModeRef.current ? basicDark : basicLight
+                ),
               });
-            },
-          })(),
+            }}
+          />{" "}
+          Dark mode for source view.
+        </label>
 
-          diffSourcePlugin({
-            codeMirrorExtensions: [
-              editorTheme.of(basicLight),
-              EditorView.updateListener.of((update) => {
-                codeMirrorViewRef.current = update.view;
-              }),
-            ],
-          }),
+        <label>
+          <input
+            type="checkbox"
+            checked={sourceMode}
+            onChange={() => setSourceMode((prev) => !prev)}
+          />{" "}
+          Source mode
+        </label>
+        <hr />
+        <label>External Frontmatter:</label>
+        <br />
+        <button
+          onClick={() => frontMatterController.setFrontMatter('"key": "value"')}
+        >
+          Set frontmatter
+        </button>
+        <button onClick={() => frontMatterController.setFrontMatter("")}>
+          Clear frontmatter
+        </button>
 
-          externalViewModePlugin({ sourceMode }),
+        <MDXEditor
+          contentEditableClassName="my-editor"
+          lexicalTheme={customLexicalTheme}
+          markdown={markdown}
+          plugins={[
+            headingsPlugin(),
+            htmlElementsPlugin(),
+            frontmatterPlugin(),
 
-          jsxPlugin({
-            jsxComponentDescriptors: [
-              {
-                name: "CustomImage",
-                kind: "flow",
-                hasChildren: false,
-                props: [],
-                Editor: () => {
-                  // this is how you get the value of the image preview handler
-                  const imagePreviewHandler =
-                    useCellValue(imagePreviewHandler$)!;
-
-                  const [imageSource, setImageSource] =
-                    useState<string>("unknown");
-
-                  useEffect(() => {
-                    if (imagePreviewHandler) {
-                      const callPreviewHandler = async () => {
-                        setImageSource(await imagePreviewHandler("something"));
-                      };
-                      callPreviewHandler().catch((e: unknown) => {
-                        console.error(e);
+            // this enables dark mode when switching to source mode
+            realmPlugin({
+              init: (r) => {
+                r.sub(viewMode$, (mode) => {
+                  if (mode === "source") {
+                    // delay so that the ref is present.
+                    setTimeout(() => {
+                      codeMirrorViewRef.current?.dispatch({
+                        effects: editorTheme.reconfigure(
+                          inDarkModeRef.current ? basicDark : basicLight
+                        ),
                       });
-                    } else {
-                      setImageSource("unknown");
-                    }
-                  }, [imagePreviewHandler]);
-
-                  return <img src={imageSource} alt="Custom image" />;
-                },
-              },
-              {
-                name: "CodeGroup",
-                kind: "flow",
-                hasChildren: true,
-                props: [],
-                Editor: () => {
-                  return (
-                    <div
-                      style={{
-                        border: "1px solid red",
-                        padding: 8,
-                        margin: 8,
-                        display: "inline-block",
-                      }}
-                    >
-                      <NestedLexicalEditor<MdxJsxTextElement>
-                        getContent={(node) => node.children}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        getUpdatedMdastNode={(mdastNode, children: any) => {
-                          return { ...mdastNode, children };
-                        }}
-                      />
-                    </div>
-                  );
-                },
-              },
-              {
-                name: "*",
-                kind: "flow",
-                hasChildren: false,
-                props: [],
-                Editor: ({ mdastNode }) => {
-                  // you can read the attributes of the JSX node here.
-                  // A more convoluted example is present here: https://github.com/mdx-editor/editor/blob/c6d1067dbe4faeb18246a27988d9b4c334565551/src/jsx-editors/GenericJsxEditor.tsx?plain=1#L40
-                  void mdastNode;
-                  const updateMdastNode = useMdastNodeUpdater();
-                  // here, you can render a custom component for the JSX node.
-                  return (
-                    <div>
-                      Unknown element
-                      <button
-                        onClick={() => {
-                          updateMdastNode({
-                            attributes: [
-                              {
-                                type: "mdxJsxAttribute",
-                                name: "foo",
-                                value: "moo",
-                              },
-                            ],
-                          });
-                        }}
-                      >
-                        Change the foo attribute to "moo"
-                      </button>
-                    </div>
-                  );
-                },
-              },
-            ],
-          }),
-
-          // frontmatter sync
-          realmPlugin({
-            init: (r) => {
-              frontMatterController.subscribe((content) => {
-                const editor = r.getValue(rootEditor$);
-
-                editor?.update(() => {
-                  const firstItem = $getRoot().getFirstChild();
-                  if (content !== "") {
-                    if (!$isFrontmatterNode(firstItem)) {
-                      const fmNode = $createFrontmatterNode(content);
-                      if (firstItem) {
-                        firstItem.insertBefore(fmNode);
-                      } else {
-                        $getRoot().append(fmNode);
-                      }
-                    } else {
-                      firstItem.setYaml(content);
-                    }
-                  } else {
-                    if ($isFrontmatterNode(firstItem)) {
-                      firstItem.remove();
-                    }
+                    });
                   }
                 });
-              });
-            },
-          })(),
+              },
+            })(),
 
-          toolbarPlugin({
-            toolbarContents: () => (
-              <DiffSourceToggleWrapper>
-                <HTMLToolbarComponent />
-                <UndoRedo />
-              </DiffSourceToggleWrapper>
-            ),
-          }),
+            diffSourcePlugin({
+              codeMirrorExtensions: [
+                editorTheme.of(basicLight),
+                EditorView.updateListener.of((update) => {
+                  codeMirrorViewRef.current = update.view;
+                }),
+              ],
+            }),
 
-          imagePlugin({
-            imagePreviewHandler: async (src) => {
-              console.log("Image preview handler", src);
-              return Promise.resolve("https://picsum.photos/200/300");
-            },
-          }),
+            externalViewModePlugin({ sourceMode }),
 
-          codeBlockPlugin(),
-          markdownShortcutPlugin(),
-        ]}
-      />
-    </div>
+            jsxPlugin({
+              jsxComponentDescriptors: [
+                {
+                  name: "CustomImage",
+                  kind: "flow",
+                  hasChildren: false,
+                  props: [],
+                  Editor: () => {
+                    // this is how you get the value of the image preview handler
+                    const imagePreviewHandler =
+                      useCellValue(imagePreviewHandler$)!;
+
+                    const [imageSource, setImageSource] =
+                      useState<string>("unknown");
+
+                    useEffect(() => {
+                      if (imagePreviewHandler) {
+                        const callPreviewHandler = async () => {
+                          setImageSource(
+                            await imagePreviewHandler("something")
+                          );
+                        };
+                        callPreviewHandler().catch((e: unknown) => {
+                          console.error(e);
+                        });
+                      } else {
+                        setImageSource("unknown");
+                      }
+                    }, [imagePreviewHandler]);
+
+                    return <img src={imageSource} alt="Custom image" />;
+                  },
+                },
+                {
+                  name: "CodeGroup",
+                  kind: "flow",
+                  hasChildren: true,
+                  props: [],
+                  Editor: () => {
+                    return (
+                      <div
+                        style={{
+                          border: "1px solid red",
+                          padding: 8,
+                          margin: 8,
+                          display: "inline-block",
+                        }}
+                      >
+                        <NestedLexicalEditor<MdxJsxTextElement>
+                          getContent={(node) => node.children}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          getUpdatedMdastNode={(mdastNode, children: any) => {
+                            return { ...mdastNode, children };
+                          }}
+                        />
+                      </div>
+                    );
+                  },
+                },
+                {
+                  name: "*",
+                  kind: "flow",
+                  hasChildren: false,
+                  props: [],
+                  Editor: ({ mdastNode }) => {
+                    // you can read the attributes of the JSX node here.
+                    // A more convoluted example is present here: https://github.com/mdx-editor/editor/blob/c6d1067dbe4faeb18246a27988d9b4c334565551/src/jsx-editors/GenericJsxEditor.tsx?plain=1#L40
+                    void mdastNode;
+                    const updateMdastNode = useMdastNodeUpdater();
+                    // here, you can render a custom component for the JSX node.
+                    return (
+                      <div>
+                        Unknown element
+                        <button
+                          onClick={() => {
+                            updateMdastNode({
+                              attributes: [
+                                {
+                                  type: "mdxJsxAttribute",
+                                  name: "foo",
+                                  value: "moo",
+                                },
+                              ],
+                            });
+                          }}
+                        >
+                          Change the foo attribute to "moo"
+                        </button>
+                      </div>
+                    );
+                  },
+                },
+              ],
+            }),
+
+            // frontmatter sync
+            realmPlugin({
+              init: (r) => {
+                frontMatterController.subscribe((content) => {
+                  const editor = r.getValue(rootEditor$);
+
+                  editor?.update(() => {
+                    const firstItem = $getRoot().getFirstChild();
+                    if (content !== "") {
+                      if (!$isFrontmatterNode(firstItem)) {
+                        const fmNode = $createFrontmatterNode(content);
+                        if (firstItem) {
+                          firstItem.insertBefore(fmNode);
+                        } else {
+                          $getRoot().append(fmNode);
+                        }
+                      } else {
+                        firstItem.setYaml(content);
+                      }
+                    } else {
+                      if ($isFrontmatterNode(firstItem)) {
+                        firstItem.remove();
+                      }
+                    }
+                  });
+                });
+              },
+            })(),
+
+            toolbarPlugin({
+              toolbarContents: () => (
+                <DiffSourceToggleWrapper>
+                  <HTMLToolbarComponent />
+                  <UndoRedo />
+                </DiffSourceToggleWrapper>
+              ),
+            }),
+
+            imagePlugin({
+              imagePreviewHandler: async (src) => {
+                console.log("Image preview handler", src);
+                return Promise.resolve("https://picsum.photos/200/300");
+              },
+            }),
+
+            codeBlockPlugin(),
+            markdownShortcutPlugin(),
+          ]}
+        />
+      </div>
+      <SourceEditorExample />
+    </>
   );
 }
 
