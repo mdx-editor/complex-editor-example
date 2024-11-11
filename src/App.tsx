@@ -9,6 +9,7 @@ import {
   imagePreviewHandler$,
   jsxPlugin,
   MDXEditor,
+  MDXEditorMethods,
   NestedLexicalEditor,
   realmPlugin,
   rootEditor$,
@@ -74,6 +75,7 @@ const externalViewModePlugin = realmPlugin<{ sourceMode: boolean }>({
 });
 
 function App() {
+  const mdxEditorRef = useRef<MDXEditorMethods>(null);
   const [sourceMode, setSourceMode] = useState(false);
   const inDarkModeRef = useRef(false);
   const codeMirrorViewRef = useRef<EditorView | null>(null);
@@ -96,7 +98,7 @@ function App() {
   return (
     <>
       <h1>Editor</h1>
-      <div style={{ height: 400, overflow: "auto" }}>
+      <div>
         <label>
           <input
             type="checkbox"
@@ -132,7 +134,17 @@ function App() {
           Clear frontmatter
         </button>
 
+        <button
+          onClick={() => {
+            mdxEditorRef.current?.focus();
+          }}
+        >
+          Focus the editor
+        </button>
+
         <MDXEditor
+          ref={mdxEditorRef}
+          autoFocus
           contentEditableClassName="my-editor"
           lexicalTheme={customLexicalTheme}
           markdown={markdown}
