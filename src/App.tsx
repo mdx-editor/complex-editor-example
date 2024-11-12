@@ -37,6 +37,7 @@ import { markdownShortcutPlugin } from "./ShortcutsPlugin/shortcutsPlugin";
 import { MdxJsxTextElement } from "mdast-util-mdx";
 import { SourceEditorExample } from "./SourceEditorExample";
 import { esmEditorPlugin } from "./esmEditorPlugin";
+import { dndPlugin } from "./dndPlugin";
 
 const markdown = `
 export const a = 123;
@@ -324,6 +325,7 @@ function App() {
             codeBlockPlugin(),
             markdownShortcutPlugin(),
             esmEditorPlugin(),
+            dndPlugin(),
           ]}
         />
       </div>
