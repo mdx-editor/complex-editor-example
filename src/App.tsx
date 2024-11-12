@@ -38,6 +38,7 @@ import { MdxJsxTextElement } from "mdast-util-mdx";
 import { SourceEditorExample } from "./SourceEditorExample";
 import { esmEditorPlugin } from "./esmEditorPlugin";
 import { dndPlugin } from "./dndPlugin";
+import { userInteractionPlugin } from "./userInteractionPlugin";
 
 const markdown = `
 export const a = 123;
@@ -326,6 +327,11 @@ function App() {
             markdownShortcutPlugin(),
             esmEditorPlugin(),
             dndPlugin(),
+            userInteractionPlugin({
+              onUserInteraction() {
+                console.log("User pressed something");
+              },
+            }),
           ]}
         />
       </div>
